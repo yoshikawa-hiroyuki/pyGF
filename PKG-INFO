@@ -1,6 +1,6 @@
 Metadata-Version: 1.1
 Name: GF
-Version: 0.2
+Version: 0.2.1
 Summary: Python interface for GF file of FrontFlow/Blue, and utils for converting GF to LSV Uns format
 Home-page: UNKNOWN
 Author: Yoshikawa, Hiroyuki, FUJITSU SYSTEMS EAST LTD.

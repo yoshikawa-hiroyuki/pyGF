@@ -342,14 +342,14 @@ class GF_DATASET(object):
       data:    array of GF_DATA
     """
     def __init__(self):
-        self.commet = []
+        self.comment = []
         self.data = []
         return
 
     def __str__(self):
-        if len(self.commet) > 0:
+        if len(self.comment) > 0:
             r = 'GF_DATASET("%s", #of DATA=%d)' % \
-                (self.commet[0].strip(), len(self.data))
+                (self.comment[0].strip(), len(self.data))
         else:
             r = 'GF_DATASET(#of DATA=%d)' % len(self.data) 
         return r
@@ -362,7 +362,7 @@ class GF_DATASET(object):
                '=' as system byte order.
         """
         if ifp is None: return False
-        self.commet = []
+        self.comment = []
         self.data = []
         fpos = ifp.tell()
 
@@ -402,7 +402,7 @@ class GF_DATASET(object):
                 buff = struct.unpack(ibo+'i60si', ifp.read(68))
             except:
                 return False
-            self.commet = self.commet + [buff[1],]
+            self.comment = self.comment + [buff[1],]
             continue
 
         # read data list
@@ -422,7 +422,7 @@ class GF_DATASET(object):
           ifp: opened ascii GF file
         """
         if ifp is None: return False
-        self.commet = []
+        self.comment = []
         self.data = []
         fpos = ifp.tell()
 
@@ -454,7 +454,7 @@ class GF_DATASET(object):
                 line = ifp.readline()
             except:
                 return False
-            self.commet = self.commet + line.rstrip()
+            self.comment = self.comment + line.rstrip()
             continue
 
         # read data list
@@ -490,14 +490,14 @@ class GF_DATASET(object):
         # write size of comment list
         sz = 4
         try:
-            ofp.write(struct.pack(obo+'iii', sz, len(self.commet), sz))
+            ofp.write(struct.pack(obo+'iii', sz, len(self.comment), sz))
         except:
             return False
 
         # write comment list
-        for i in range(len(self.commet)):
+        for i in range(len(self.comment)):
             try:
-                ofp.write(struct.pack(obo+'i60si', sz, self.commet[i], sz))
+                ofp.write(struct.pack(obo+'i60si', sz, self.comment[i], sz))
             except:
                 return False
             continue
@@ -515,19 +515,19 @@ class GF_FILE(object):
     """
     GF File representation
       fileType: file type keyword ("#U_GF_XX" or "#A_GF_XX")
-      commet:   array of comment string (60 characters each)
+      comment:  array of comment string (60 characters each)
       dataset:  array of GF_DATASET
     """
     def __init__(self):
         self.fileType = ''
-        self.commet = []
+        self.comment = []
         self.dataset = []
         return
 
     def __str__(self):
-        if len(self.commet) > 0:
+        if len(self.comment) > 0:
             r = 'GF_FILE("%s", type=%s, #of DATASET=%d)' % \
-                (self.commet[0].strip(), self.fileType, len(self.dataset))
+                (self.comment[0].strip(), self.fileType, len(self.dataset))
         else:
             r = 'GF_FILE(type=%s, #of DATASET=%d)' % \
                 (self.fileType, len(self.dataset))
@@ -544,7 +544,7 @@ class GF_FILE(object):
             return False
 
         self.fileType = ''
-        self.commet = []
+        self.comment = []
         self.dataset = []
         ibo = '<' # byte order
 
@@ -584,7 +584,7 @@ class GF_FILE(object):
             except:
                 ifp.close()
                 return False
-            self.commet = self.commet + [buff[1],]
+            self.comment = self.comment + [buff[1],]
             continue
 
         # read dataset list
@@ -610,7 +610,7 @@ class GF_FILE(object):
             return False
 
         self.fileType = ''
-        self.commet = []
+        self.comment = []
         self.dataset = []
 
         # read header ("#A_GF_XX")
@@ -640,7 +640,7 @@ class GF_FILE(object):
                 line = ifp.readline()
             except:
                 return False
-            self.commet = self.commet + line.rstrip()
+            self.comment.append( line.rstrip() )
             continue
 
         # read dataset list
@@ -682,15 +682,15 @@ class GF_FILE(object):
         # write size of comment list
         sz = 4
         try:
-            ofp.write(struct.pack(obo+'iii', sz, len(self.commet), sz))
+            ofp.write(struct.pack(obo+'iii', sz, len(self.comment), sz))
         except:
             ofp.close()
             return False
 
         # write comment list
-        for i in range(len(self.commet)):
+        for i in range(len(self.comment)):
             try:
-                ofp.write(struct.pack(obo+'i60si', sz, self.commet[i], sz))
+                ofp.write(struct.pack(obo+'i60si', sz, self.comment[i], sz))
             except:
                 ofp.close()
                 return False
