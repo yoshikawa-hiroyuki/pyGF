@@ -454,7 +454,7 @@ class GF_DATASET(object):
                 line = ifp.readline()
             except:
                 return False
-            self.comment = self.comment + line.rstrip()
+            self.comment.append( line.rstrip() )
             continue
 
         # read data list
