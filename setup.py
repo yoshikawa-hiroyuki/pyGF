@@ -5,7 +5,7 @@ setup(name="GF",
     description="Python interface for GF file of FrontFlow/Blue,"
     " and utils for converting GF to LSV Uns format",
     requires=["numpy"],
-    author="Yoshikawa, Hiroyuki, FUJITSU SYSTEMS EAST LTD.",
+    author="Yoshikawa, Hiroyuki, FUJITSU LTD.",
     author_email="yoh@jp.fujitsu.com",
     packages=["GF"],
     )

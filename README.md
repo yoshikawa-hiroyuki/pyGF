@@ -13,5 +13,5 @@ or
  *<http://www.ciss.iis.u-tokyo.ac.jp/rss21/theme/multi/fluid/fluid_softwareinfo.html>
 
 ## Author
-  YOSHIKAWA Hiroyuki, FUJITSU SYSTEMS EAST LTD.
+  YOSHIKAWA Hiroyuki, FUJITSU LTD.
 
