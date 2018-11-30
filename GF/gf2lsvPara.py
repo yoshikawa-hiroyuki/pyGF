@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-gf2unsP : convert FFB/GF files(with dividing mesh) to LSV Uns files
+gf2lsvPara : convert FFB/GF files(with dividing mesh) to LSV Uns files
   read : MESH.Pnnn, FLOW.Pnnn, DDD
   write: Index, UnsMesh, UnsData
 """

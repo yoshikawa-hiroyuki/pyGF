@@ -1,24 +1,40 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-gf2uns : convert FFB/GF files(with non dividing mesh) to LSV Uns files
+gf2vtk : convert FFB/GF files(with non dividing mesh) to VTK files
   read : MESH, FLOW
-  write: Index, UnsMesh, UnsData
+  write: VTK (Unstructured Grid)
 """
 import sys, os
 import struct
 import getopt
 import GF
+try:
+    import vtk
+except:
+    print '%s: import vtk failed, VTK may not installed' % sys.argv[0]
+    sys.exit(1)
 
 
 def usage0():
     print 'usage: %s [-h|--help]' % os.path.basename(sys.argv[0])
     print '       %s <--mesh|--amesh> meshfile <--data|--adata> datafile \\' \
          % os.path.basename(sys.argv[0])
-    print '          [--out outbase] [--order no]'
+    print '          [--out outfile.vtk] [--order no]'
 
 
-def outUnm(path, mesh):
+def outVTK(path, grid):
+    uWriter = vtk.vtkUnstructuredGridWriter()
+    uWriter.SetInputData(grid)
+    uWriter.SetFileName(path)
+    try:
+        uWriter.Write()
+    except:
+        return False
+    return True
+
+
+def setupMesh(grid, mesh):
     failRet = (-1, -1)
     if mesh == None or len(mesh.dataset) < 1 or len(mesh.dataset[0].data) < 2:
         return failRet
@@ -28,21 +44,8 @@ def outUnm(path, mesh):
     nElem = NodeTbl.aryNum[0]
     if nNode < 1 or nElem < 1:
         return failRet
-
     nnNode = nNode
     
-    # open mesh file
-    try:
-        ofp = open(path, 'wb')
-    except:
-        return failRet
-
-    # write node-info block
-    ofp.write(struct.pack('2i', nNode, nnNode))
-    for i in range(nNode):
-        ofp.write(struct.pack('i', i))
-        continue
-
     # scan elem info
     (nTetra, nPyra, nHexa) = (0, 0, 0)
     for i in range(nElem):
@@ -56,80 +59,57 @@ def outUnm(path, mesh):
     nETypes = 0
     if nHexa > 0 or nPyra > 0: nETypes = nETypes + 1
     if nTetra > 0: nETypes = nETypes + 1
+    if nETypes < 1:
+        return failRet
 
-    # write elem-info block
-    ofp.write(struct.pack('i', nETypes))
-    nEInner = 0
-
-    # write TETRA elem block
-    if nTetra > 0:
-        ofp.write(struct.pack('iii', 4, nTetra, 0)) # EType, nEInner, nEOverlap
-        for i in range(nTetra):
-            ofp.write(struct.pack('i', i))
-            continue
-        for i in range(nElem):
-            arr = mesh.dataset[0].data[1].array[i]
-            if arr[-1] > 0: continue
-            if arr[-4] > 0: continue
-            ofp.write(struct.pack('iiii',
-                                  arr[0]-1, arr[1]-1, arr[2]-1, arr[3]-1))
-            continue
-
-    # write HEXA elem block
-    if nHexa > 0 or nPyra > 0:
-        nEInner = nHexa + nPyra
-        ofp.write(struct.pack('iii', 8, nEInner, 0)) # EType, nEInner, nEOverlap
-        for i in range(nEInner):
-            ofp.write(struct.pack('i', i + nTetra))
-            continue
-        for i in range(nElem):
-            arr = mesh.dataset[0].data[1].array[i]
-            if arr[-4] == 0: continue
-            if arr[-1] == 0: # Pyramid
-                ofp.write(struct.pack('8i',
-                                      arr[0]-1, arr[1]-1, arr[2]-1, arr[3]-1,
-                                      arr[4]-1, arr[4]-1, arr[4]-1, arr[4]-1 ))
-                                      #arr[1]-1, arr[2]-1, arr[3]-1, arr[4]-1,
-                                      #arr[0]-1, arr[0]-1, arr[0]-1, arr[0]-1 ))
-                continue
-            ofp.write(struct.pack('8i', arr[0]-1, arr[1]-1, arr[2]-1, arr[3]-1,
-                                  arr[4]-1, arr[5]-1, arr[6]-1, arr[7]-1 ))
-            continue
-
-    # write Ngrp block
-    ofp.write(struct.pack('i', 0)) # nNgrp
-
-    # write Egrp block
-    ofp.write(struct.pack('i', 0)) # nEgrp
-
-    # write Sgrp block
-    ofp.write(struct.pack('i', 0)) # nSgrp
-
-    # write Comm block
-    ofp.write(struct.pack('i', 0)) # nPE
-
-    # write xyz block
-    ofp.write(struct.pack('i', nnNode))
-    ofp.write(struct.pack('i', 3)) # nD
+    # set node array
+    points = vtk.vtkPoints()
     for i in range(nnNode):
         arr = mesh.dataset[0].data[0].array[i]
-        ofp.write(struct.pack('ddd', arr[0], arr[1], arr[2]))
-        continue
+        points.InsertNextPoint(arr)
+        continue # end of for(i)
+    grid.SetPoints(points)
+    del points
 
-    ofp.close()
+    # set cell array
+    cells = vtk.vtkCellArray()
+    for i in range(nElem):
+        arr = mesh.dataset[0].data[1].array[i]
+        if arr[-1] > 0: # Hexa
+            hex = vtk.vtkHexahedron() 
+            hpids = hex.GetPointIds()
+            for j in range(8):
+                hpids.SetId(j, arr[j]-1)
+                continue # end of for(j)
+            cells.InsertNextCell(hex)
+        elif arr[-4] > 0: # Pyramid
+            pyr = vtk.vtkPyramid() 
+            hpids = pyr.GetPointIds()
+            for j in range(5):
+                hpids.SetId(j, arr[j]-1)
+                continue # end of for(j)
+            cells.InsertNextCell(pyr)
+        else: # Tetra
+            tet = vtk.vtkTetra()
+            hpids = tet.GetPointIds()
+            for j in range(4):
+                ids.SetId(j, arr[j]-1)
+                continue # end of for(j)
+            cells.InsertNextCell(tet)
+        continue # end of for(i)
+    grid.SetCells(cells)
+    del cells
+    
     return (nnNode, nTetra + nPyra + nHexa)
 
 
-def outUnd(path, nNode, nElem, mesh, data, dorder=0):
+def setupData(path, nNode, nElem, grid, data, dorder=0):
     if nNode < 1 or nElem < 1: return 0
-    if mesh == None or len(mesh.dataset) < 1 or len(mesh.dataset[0].data) < 2:
-        return 0
     if data == None or len(data.dataset) < 1 or len(data.dataset[0].data) < 3:
         return 0
     if dorder < 0 or dorder >= len(data.dataset[0].data) - 2:
         return 0
 
-    Etbl = mesh.dataset[0].data[1]
     Data = data.dataset[0].data[dorder + 2]
     (nND, nED) = (0, 0)
     NodeData = True
@@ -154,20 +134,17 @@ def outUnd(path, nNode, nElem, mesh, data, dorder=0):
     if nND == 0 and nED == 0:
         return 0
 
-    # open data file
-    try:
-        ofp = open(path, 'wb')
-    except:
-        return 0
-
-    # write node data block
-    ofp.write(struct.pack('2i', nNode, nND))
+    # set node data
     if nND == 1:
+        ndatas = vtk.vtkFloatArray()
         for i in range(nNode):
-            ofp.write(struct.pack('d', Data.array[i][0]))
-            continue
+            ndatas.InsertNextTuple(Data.array[i][0:1])
+            continue # end of for(i)
     elif nND == 3:
+        ndatas = vtk.vtkFloatArray()
+        ndatas.SetNumberOfComponents(3)
         for i in range(nNode):
+            ndatas.InsertNextTuple(warp)
             ofp.write(struct.pack('ddd', Data.array[i][0],
                                   Data.array[i][1], Data.array[i][2]))
             continue
@@ -205,74 +182,6 @@ def outUnd(path, nNode, nElem, mesh, data, dorder=0):
 
     ofp.close()
     return nND - nED
-
-
-def outIdx(path, meshPath, dataPath, data, dorder=0):
-    if data == None or len(data.dataset) < 1 or len(data.dataset[0].data) < 3:
-        return 0
-    if dorder < 0 or dorder >= len(data.dataset[0].data) - 2:
-        return 0
-
-    Data = data.dataset[0].data[dorder + 2]
-    (nND, nED) = (0, 0)
-    NodeData = True
-    if Data.keyword[-1] == 'E':
-        NodeData = False
-
-    if NodeData:
-        nnNode = Data.aryNum[0]
-        if nNode != nnNode:
-            return 0
-        nND = Data.aryNum[1]
-        if nND != 1 and nND != 3:
-            return 0
-    else:
-        nnElem = Data.aryNum[0]
-        if nElem < nnElem:
-            return 0
-        nED = Data.aryNum[1]
-        if nED != 1 and nED != 3:
-            return 0
-    if nND == 0 and nED == 0:
-        return 0
-
-    stpIndex = 0
-    stpTime = 0.0
-    for i in range(2):
-        if data.dataset[0].data[i].keyword == '*TIME_PS':
-            stpTime = float(data.dataset[0].data[i].array[0][0])
-            continue
-        if data.dataset[0].data[i].keyword == '*STEP_PS':
-            stpTime = int(data.dataset[0].data[i].array[0][0])
-            continue
-        continue
-
-    # open data file
-    try:
-        ofp = open(path, 'w')
-    except:
-        return 0
-
-    # write index data
-    ofp.write('<?xml version="1.0" encoding="utf-8"?>\n')
-    ofp.write('<LSV_Index>\n')
-    ofp.write('<data type="UNS">\n')
-    ofp.write('  <info>\n')
-    ofp.write('    <ndatas>%d</ndatas>\n' % nND)
-    ofp.write('    <edatas>%d</edatas>\n' % nED)
-    ofp.write('    <files>1</files>\n')
-    ofp.write('  </info>\n')
-    ofp.write('  <mesh>\n')
-    ofp.write('    <file>%s</file>\n' % meshPath)
-    ofp.write('  </mesh>\n')
-    ofp.write('  <step index="%d" time="%f">\n' % (stpIndex, stpTime))
-    ofp.write('    <file>%s</file>\n' % dataPath)
-    ofp.write('  </step>\n')
-    ofp.write('</data>\n')
-    ofp.write('</LSV_Index>\n')
-
-    ofp.close()
-    return 1
 
 
 if __name__ == '__main__':
