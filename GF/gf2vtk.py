@@ -18,9 +18,9 @@ except:
 
 def usage0():
     print 'usage: %s [-h|--help]' % os.path.basename(sys.argv[0])
-    print '       %s <--mesh|--amesh> meshfile <--data|--adata> datafile \\' \
+    print '       %s <--mesh|--amesh> meshfile <--data|--adata> datafile \\'\
          % os.path.basename(sys.argv[0])
-    print '          [--out outfile.vtk] [--order no]'
+    print '          [--out outfile.vtk] [--order int]'
 
 
 def outVTK(path, grid):
@@ -140,48 +140,35 @@ def setupData(path, nNode, nElem, grid, data, dorder=0):
         for i in range(nNode):
             ndatas.InsertNextTuple(Data.array[i][0:1])
             continue # end of for(i)
+        grid.GetPointData().AddArray(ndatas)
+        del ndatas
     elif nND == 3:
         ndatas = vtk.vtkFloatArray()
         ndatas.SetNumberOfComponents(3)
         for i in range(nNode):
-            ndatas.InsertNextTuple(warp)
-            ofp.write(struct.pack('ddd', Data.array[i][0],
-                                  Data.array[i][1], Data.array[i][2]))
-            continue
+            ndatas.InsertNextTuple(Data.array[i][0:3])
+            continue # end of for(i)
+        grid.GetPointData().AddArray(ndatas)
+        del ndatas
 
-    # write elem data block
-    ofp.write(struct.pack('2i', nElem, nED))
-    if nED > 0:
-        (nTetra, nPyra, nHexa) = (0, 0, 0)
-        for i in range(nnElem):
-            if Etbl.array[i][-1] > 0:
-                nHexa = nHexa + 1
-            elif Etbl.array[i][-4] > 0:
-                nPyra = nPyra + 1
-            else:
-                nTetra = nTetra + 1
-            continue
+    # set elem data
+    if nED ==  1:
+        edatas = vtk.vtkFloatArray()
+        for i in range(nElem):
+            edatas.InsertNextTuple(Data.array[i][0:1])
+            continue # end of for(i)
+        grid.GetCellData().AddArray(edatas)
+        del edatas
+    elif nED == 3:
+        edatas = vtk.vtkFloatArray()
+        edatas.SetNumberOfComponents(3)
+        for i in range(nElem):
+            edatas.InsertNextTuple(Data.array[i][0:3])
+            continue # end of for(i)
+        grid.GetCellData().AddArray(edatas)
+        del edatas
 
-        # write TETRA elem block
-        if nTetra > 0:
-            for i in range(nnElem):
-                arr = Etbl.array[i]
-                if arr[-4] > 0: continue
-                for j in range(nED):
-                    ofp.write(struct.pack('d', Data.array[i][j]))
-                continue
-
-        # write HEXA elem block
-        if nHexa > 0 or nPyra > 0:
-            for i in range(nnElem):
-                arr = Etbl.array[i]
-                if arr[-4] == 0: continue
-                for j in range(nED):
-                    ofp.write(struct.pack('d', Data.array[i][j]))
-                continue
-
-    ofp.close()
-    return nND - nED
+    return nND + nED
 
 
 if __name__ == '__main__':
@@ -256,25 +243,25 @@ if __name__ == '__main__':
 
     #-------------- DATA OUTPUT --------------
     if outbase == None:
-        outMesh = 'GFDATA.unm'
-        outData = 'GFDATA.und'
-        outIndex = 'GFDATA.idx'
+        outvtk = 'GFDATA.vtk'
+    elif outbase.endswith('.vtk'):
+        outvtk = outbase
     else:
-        outMesh = outbase + '.unm'
-        outData = outbase + '.und'
-        outIndex = outbase + '.idx'
+        outvtk = outbase + '.vtk'
 
-    (nNode, nElem) = outUnm(outMesh, Mesh)
+    grid = vtk.vtkUnstructuredGrid()
+        
+    (nNode, nElem) = setupMesh(grid, Mesh)
     if nNode < 1 or nElem < 1:
-        print('%s: Mesh file output failed: %s\n' % (sys.argv[0], outMesh))
+        print('%s: Mesh traverse failed.\n' % sys.argv[0])
         sys.exit(5)
 
-    if outUnd(outData, nNode, nElem, Mesh, Data, order) == 0:
-        print('%s: Data file output failed: %s\n' % (sys.argv[0], outData))
+    if setupData(grid, nNode, nElem, Data, order) == 0:
+        print('%s: Data traverse failed.\n' % sys.argv[0])
         sys.exit(6)
 
-    if outIdx(outIndex, outMesh, outData, Data, order) == 0:
-        print('%s: Index file output failed: %s\n' % (sys.argv[0], outIndex))
+    if outVTK(outvtk, grid) == 0:
+        print('%s: vtk file output failed: %s\n' % (sys.argv[0], outvtk))
         sys.exit(7)
 
     #-------------- DONE --------------
