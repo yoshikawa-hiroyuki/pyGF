@@ -24,6 +24,11 @@ def usage0():
 
 
 def outVTK(path, grid):
+    """
+    outVTK: write grid data to the specified VTK file
+    @param path: path to the VTK file
+    @param grid: grid data to write
+    """
     uWriter = vtk.vtkUnstructuredGridWriter()
     uWriter.SetInputData(grid)
     uWriter.SetFileName(path)
@@ -35,6 +40,12 @@ def outVTK(path, grid):
 
 
 def setupMesh(grid, mesh):
+    """
+    setupMesh: setup mesh data to the grid data
+    @param grid: grid data (vtkUnstructuredGrid)
+    @param mesh: mesh data (GL_FILE)
+    @returns (#of nodes, #of elems)
+    """
     failRet = (-1, -1)
     if mesh == None or len(mesh.dataset) < 1 or len(mesh.dataset[0].data) < 2:
         return failRet
@@ -72,7 +83,6 @@ def setupMesh(grid, mesh):
     del points
 
     # set cell array
-    cells = vtk.vtkCellArray()
     for i in range(nElem):
         arr = mesh.dataset[0].data[1].array[i]
         if arr[-1] > 0: # Hexa
@@ -81,36 +91,43 @@ def setupMesh(grid, mesh):
             for j in range(8):
                 hpids.SetId(j, arr[j]-1)
                 continue # end of for(j)
-            cells.InsertNextCell(hex)
+            grid.InsertNextCell(hex.GetCellType(), hex.GetPointIds())
         elif arr[-4] > 0: # Pyramid
             pyr = vtk.vtkPyramid() 
             hpids = pyr.GetPointIds()
             for j in range(5):
                 hpids.SetId(j, arr[j]-1)
                 continue # end of for(j)
-            cells.InsertNextCell(pyr)
+            grid.InsertNextCell(pyr.GetCellType(), pyr.GetPointIds())
         else: # Tetra
             tet = vtk.vtkTetra()
             hpids = tet.GetPointIds()
             for j in range(4):
                 ids.SetId(j, arr[j]-1)
                 continue # end of for(j)
-            cells.InsertNextCell(tet)
+            grid.InsertNextCell(tet.GetCellType(), tet.GetPointIds())
         continue # end of for(i)
-    grid.SetCells(cells)
-    del cells
     
     return (nnNode, nTetra + nPyra + nHexa)
 
 
-def setupData(path, nNode, nElem, grid, data, dorder=0):
+def setupData(nNode, nElem, grid, data, dorder=0):
+    """
+    setupData: setup node/elem data to the grid data
+    @param nNode: #of nodes
+    @param nElem: #of elems
+    @param grid: grid data (vtkUnstructuredGrid)
+    @param data: numerical data (GL_FILE)
+    @param dorder: the order of data to setup (default=0)
+    @returns length of data setup'ed
+    """
     if nNode < 1 or nElem < 1: return 0
     if data == None or len(data.dataset) < 1 or len(data.dataset[0].data) < 3:
         return 0
     if dorder < 0 or dorder >= len(data.dataset[0].data) - 2:
         return 0
 
-    Data = data.dataset[0].data[dorder + 2]
+    Data = data.dataset[0].data[dorder + 2] # 0 is TIME, 1 is STEP
     (nND, nED) = (0, 0)
     NodeData = True
     if Data.keyword[-1] == 'E':
@@ -140,6 +157,7 @@ def setupData(path, nNode, nElem, grid, data, dorder=0):
         for i in range(nNode):
             ndatas.InsertNextTuple(Data.array[i][0:1])
             continue # end of for(i)
+        ndatas.SetName(Data.comment)
         grid.GetPointData().AddArray(ndatas)
         del ndatas
     elif nND == 3:
@@ -148,6 +166,7 @@ def setupData(path, nNode, nElem, grid, data, dorder=0):
         for i in range(nNode):
             ndatas.InsertNextTuple(Data.array[i][0:3])
             continue # end of for(i)
+        ndatas.SetName(Data.comment)
         grid.GetPointData().AddArray(ndatas)
         del ndatas
 
@@ -157,6 +176,7 @@ def setupData(path, nNode, nElem, grid, data, dorder=0):
         for i in range(nElem):
             edatas.InsertNextTuple(Data.array[i][0:1])
             continue # end of for(i)
+        edatas.SetName(Data.comment)        
         grid.GetCellData().AddArray(edatas)
         del edatas
     elif nED == 3:
@@ -165,6 +185,7 @@ def setupData(path, nNode, nElem, grid, data, dorder=0):
         for i in range(nElem):
             edatas.InsertNextTuple(Data.array[i][0:3])
             continue # end of for(i)
+        edatas.SetName(Data.comment)        
         grid.GetCellData().AddArray(edatas)
         del edatas
 
@@ -256,7 +277,7 @@ if __name__ == '__main__':
         print('%s: Mesh traverse failed.\n' % sys.argv[0])
         sys.exit(5)
 
-    if setupData(grid, nNode, nElem, Data, order) == 0:
+    if setupData(nNode, nElem, grid, Data, order) == 0:
         print('%s: Data traverse failed.\n' % sys.argv[0])
         sys.exit(6)
 
