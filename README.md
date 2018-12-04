@@ -67,6 +67,10 @@ options:
     specify MESH file (binary), this or --amesh is required
   --amesh meshfile
     specify MESH file (ascii), this or --mesh is required
+  --data datafile
+    specify DATA file (binary), this or --adata is required
+  --adata datafile
+    specify DATA file (ascii), this or --data is required
   --out outfile.vtk
     specify the output file path, this is optional(default is 'GFDATA.vtk')
   --order int
