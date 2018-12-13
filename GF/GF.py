@@ -731,13 +731,13 @@ if __name__ == '__main__':
         else:
             ret = gf.read_ascii(f)
         if ret:
-            print 'file: ' + f
-            print gf
+            print('file: ' + f)
+            print(gf)
             for ds in gf.dataset:
-                print ds
+                print(ds)
                 for d in ds.data:
-                    print d
+                    print(d)
         else:
-            print 'file: ' + f + '... read failed'
+            print('file: ' + f + '... read failed')
         continue
     sys.exit()

@@ -14,10 +14,10 @@ import GF
 
 
 def usage0():
-    print 'usage: %s [-h|--help]' % os.path.basename(sys.argv[0])
-    print '       %s --ddd dddfile --mesh meshbase --data database' \
-        % os.path.basename(sys.argv[0])
-    print '       \t\t[--out outbase] [--order dataNo]'
+    print('usage: %s [-h|--help]' % os.path.basename(sys.argv[0]))
+    print('       %s --ddd dddfile --mesh meshbase --data database' \
+        % os.path.basename(sys.argv[0]))
+    print('       \t\t[--out outbase] [--order dataNo]')
 
 
 def checkDDD(ddd):
@@ -396,7 +396,7 @@ if __name__ == '__main__':
         sys.exit(1)
 
     ddd = GF.GF_FILE()
-    print 'reading ddd file: %s ...' % dddfile,
+    sys.stdout.write('reading ddd file: %s ...' % dddfile)
     sys.stdout.flush()
     if not ddd.read(dddfile):
         print('%s: ddd file load failed: %s\n' % (sys.argv[0], dddfile))
@@ -405,7 +405,7 @@ if __name__ == '__main__':
     if numDomain < 1:
         print('%s: invalid ddd file specified %s\n' % (sys.argv[0], dddfile))
         sys.exit(1)
-    print 'done'
+    print('done')
 
     #-------------- PREPARE INPUT FILENAME --------------
     inMesh = os.popen('ls -1 %s*' % meshbase).read().split()
@@ -434,41 +434,41 @@ if __name__ == '__main__':
         # read mesh
         meshfile = inMesh[sd]
         Mesh = GF.GF_FILE()
-        print 'reading mesh file: %s ...' % meshfile,
+        sys.stdout.write('reading mesh file: %s ...' % meshfile)
         sys.stdout.flush()
         if not Mesh.read(meshfile):
             print('%s: mesh file load failed: %s\n' % (sys.argv[0], meshfile))
             sys.exit(2)
-        print 'done'
+        print('done')
 
         # read data
         datafile = inData[sd]
         Data = GF.GF_FILE()
-        print 'reading data file: %s ...' % datafile,
+        sys.stdout.write('reading data file: %s ...' % datafile)
         sys.stdout.flush()
         if not Data.read(datafile):
             print('%s: data file load failed: %s\n' % (sys.argv[0], datafile))
             sys.exit(3)
-        print 'done'
+        print('done')
 
         # write mesh
-        print 'writing mesh file: %s ...' % outMesh[sd],
+        sys.stdout.write('writing mesh file: %s ...' % outMesh[sd])
         sys.stdout.flush()
         (nNode, nElem) = outUnm(outMesh[sd], Mesh, ddd, sd)
         if nNode < 1 or nElem < 1:
             print('%s: Mesh file output failed: %s\n' % \
                       (sys.argv[0], outMesh[sd]))
             sys.exit(5)
-        print 'done'
+        print('done')
 
         # write data
-        print 'writing data file: %s ...' % outData[sd],
+        sys.stdout.write('writing data file: %s ...' % outData[sd])
         sys.stdout.flush()
         if outUnd(outData[sd], nNode, nElem, Mesh, Data, order) == 0:
             print('%s: Data file output failed: %s\n' % \
                       (sys.argv[0], outData[sd]))
             sys.exit(6)
-        print 'done'
+        print('done')
 
         continue # end of for(sd)
     #---- main loop ----
@@ -480,12 +480,12 @@ if __name__ == '__main__':
     else:
         outIndex = outbase + '.idx'
 
-    print 'writing index file: %s ...' % outIndex,
+    sys.stdout.write('writing index file: %s ...' % outIndex)
     sys.stdout.flush()
     if outIdx(outIndex, outMesh, outData, Data, order) == 0:
         print('%s: Index file output failed: %s\n' % (sys.argv[0], outIndex))
         sys.exit(7)
-    print 'done'
+    print('done')
 
     #-------------- DONE --------------
     sys.exit(0)

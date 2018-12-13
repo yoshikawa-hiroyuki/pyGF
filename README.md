@@ -1,6 +1,6 @@
 # pyGF
 Python interface for GF file of FrontFlow/Blue,
-and utils for converting GF to LSV-Uns format.
+and utils for converting GF to LSV-Uns/VTK format.
 
 ## Install
   ```

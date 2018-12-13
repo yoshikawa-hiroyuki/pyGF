@@ -12,10 +12,10 @@ import GF
 
 
 def usage0():
-    print 'usage: %s [-h|--help]' % os.path.basename(sys.argv[0])
-    print '       %s <--mesh|--amesh> meshfile <--data|--adata> datafile \\' \
-         % os.path.basename(sys.argv[0])
-    print '          [--out outbase] [--order no]'
+    print('usage: %s [-h|--help]' % os.path.basename(sys.argv[0]))
+    print('       %s <--mesh|--amesh> meshfile <--data|--adata> datafile \\' \
+         % os.path.basename(sys.argv[0]))
+    print('          [--out outbase] [--order no]')
 
 
 def outUnm(path, mesh):
@@ -322,7 +322,7 @@ if __name__ == '__main__':
         sys.exit(1)
 
     Mesh = GF.GF_FILE()
-    print 'reading mesh file: %s ...' % meshfile,
+    sys.stdout.write('reading mesh file: %s ...' % meshfile)
     sys.stdout.flush()
     if mesh_bin:
         ret = Mesh.read(meshfile)
@@ -331,10 +331,10 @@ if __name__ == '__main__':
     if not ret:
         print('%s: mesh file load failed: %s\n' % (sys.argv[0], meshfile))
         sys.exit(2)
-    print 'done'
+    print('done')
 
     Data = GF.GF_FILE()
-    print 'reading data file: %s ...' % datafile,
+    sys.stdout.write('reading data file: %s ...' % datafile)
     sys.stdout.flush()
     if data_bin:
         ret = Data.read(datafile)
@@ -343,7 +343,7 @@ if __name__ == '__main__':
     if not ret:
         print('%s: data file load failed: %s\n' % (sys.argv[0], datafile))
         sys.exit(3)
-    print 'done'
+    print('done')
 
     #-------------- DATA OUTPUT --------------
     if outbase == None:
