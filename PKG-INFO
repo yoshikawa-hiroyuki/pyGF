@@ -1,5 +1,5 @@
 Metadata-Version: 1.1
-Name: GF
+Name: pyGF
 Version: 0.2.1
 Summary: Python interface for GF file of FrontFlow/Blue, and utils for converting GF to LSV Uns/VTK format
 Home-page: UNKNOWN

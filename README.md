@@ -14,7 +14,7 @@ or
 ## Usage of GF module
 ```
 # import GF module
-from GF import GF
+from pyGF import GF
 
 # read MESH file
 mesh = GF.GF_FILE()
